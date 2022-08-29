@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken')
 
 const checkFields = (req, res, next) => {
   if(req.body.username == null || req.body.password == null){
-    res.status(400).json({message: "username and password required"})
+    res.status(401).json({message: "username and password required"})
   }
   else{
     next()
