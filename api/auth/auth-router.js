@@ -5,7 +5,7 @@ const User = require('./users-model')
 const jwt = require('jsonwebtoken')
 const {checkUsernameAvailable, checkFields, checkUsernameExists} = require('../middleware/restricted')
 
-router.post('/register', checkUsernameAvailable, checkFields,(req, res, next) => {
+router.post('/register', checkFields, checkUsernameAvailable, (req, res, next) => {
   const {username, password} = req.body
     let hash = bcrypt.hashSync(password, 8)
 
@@ -42,7 +42,7 @@ router.post('/register', checkUsernameAvailable, checkFields,(req, res, next) =>
       the response body should include a string exactly as follows: "username taken".
   */
 
-router.post('/login', checkUsernameExists, checkFields, (req, res, next) => {
+router.post('/login', checkFields, checkUsernameExists, (req, res, next) => {
   if(bcrypt.compareSync(req.body.password, req.user.password)){
     const token = buildToken(req.user)
       res.json({message: `welcome, ${req.user.username}`,
