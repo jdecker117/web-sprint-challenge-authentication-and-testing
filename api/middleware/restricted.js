@@ -1,8 +1,17 @@
 const { JWT_SECRET } = require("../secrets/index");
 const {findBy} = require('../auth/users-model')
 const jwt = require('jsonwebtoken')
+
+const checkFields = (req, res, next) => {
+  if(req.body.username == null || req.body.password == null){
+    res.status(400).json({message: "username and password required"})
+  }
+  else{
+    next()
+  }
+}
   
-  const restricted = (req, res, next) => {
+const restricted = (req, res, next) => {
     const token = req.headers.authorization;
     if(token == null){
       next({ status: 401, message: "token required"})
@@ -34,6 +43,20 @@ const jwt = require('jsonwebtoken')
       next(err)
     }
   }
+
+  const checkUsernameExists = async (req, res, next) => {
+  try {
+    const [user] = await findBy({username: req.body.username})
+    if(!user){
+      next({status: 401, message: "invalid credentials"})
+    } else{
+      req.user = user
+      next()
+    }
+  } catch(err){
+    next(err)
+  }
+  }
   /*
     IMPLEMENT
 
@@ -47,5 +70,7 @@ const jwt = require('jsonwebtoken')
   */
 module.exports = {
   restricted,
-  checkUsernameAvailable
+  checkUsernameAvailable,
+  checkFields,
+  checkUsernameExists
 }

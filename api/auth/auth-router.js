@@ -3,15 +3,11 @@ const { JWT_SECRET, BCRYPT_ROUNDS } = require("../secrets/index"); // use this s
 const bcrypt = require('bcryptjs')
 const User = require('./users-model')
 const jwt = require('jsonwebtoken')
-const {checkUsernameAvailable} = require('../middleware/restricted')
+const {checkUsernameAvailable, checkFields, checkUsernameExists} = require('../middleware/restricted')
 
-router.post('/register', checkUsernameAvailable, (req, res, next) => {
+router.post('/register', checkUsernameAvailable, checkFields,(req, res, next) => {
   const {username, password} = req.body
     let hash = bcrypt.hashSync(password, 8)
-
-  if(req.body.username == null || req.body.password == null){
-    next({status: 401, message: "username and password required"})
-  }
 
     User.add({username, password: hash})
     .then(saved => {
@@ -46,8 +42,26 @@ router.post('/register', checkUsernameAvailable, (req, res, next) => {
       the response body should include a string exactly as follows: "username taken".
   */
 
-router.post('/login', (req, res) => {
-  res.end('implement login, please!');
+router.post('/login', checkUsernameExists, (req, res) => {
+  if(bcrypt.compareSync(req.body.password, req.user.password)){
+    const token = buildToken(req.user)
+      res.json({message: `welcome, ${req.user.username}`,
+      token})
+  } else{
+    next({ status: 401, message: "invalid credentials"})
+  }
+});
+
+function buildToken(user){
+  const payload = {
+    subject: user.user_id,
+    username: user.username,
+  }
+  const options = {
+    expiresIn: '1d',
+  }
+  return jwt.sign(payload, JWT_SECRET, options)
+}
   /*
     IMPLEMENT
     You are welcome to build additional middlewares to help with the endpoint's functionality.
@@ -71,6 +85,6 @@ router.post('/login', (req, res) => {
     4- On FAILED login due to `username` not existing in the db, or `password` being incorrect,
       the response body should include a string exactly as follows: "invalid credentials".
   */
-});
+;
 
 module.exports = router;
